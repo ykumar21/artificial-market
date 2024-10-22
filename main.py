@@ -1,17 +1,17 @@
 import threading
 import time
 
-from agents import RandomAgent
+from agents import RandomAgent, AgentFactory
 from exchange import Exchange
 from order import OrderTypes
 
 def main():
     centralExchange = Exchange()
 
-    client = RandomAgent(clientId=1, exchange=centralExchange, priceRange=(90,102))
-    client2 = RandomAgent(clientId=2, exchange=centralExchange, priceRange=(98,110))
+    client = AgentFactory.create_agent('./agents/RandomAgent.ini')
+    client.display_config()
+    client.connectTo( centralExchange )
     client.emitOrder(orderType=OrderTypes.BUY)
-    client2.emitOrder(orderType=OrderTypes.SELL)
 
     # This is a slow implementation - use for debug purposes only
     centralExchange.plotOrderBook()
