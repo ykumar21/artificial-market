@@ -1,3 +1,4 @@
+import queue
 from collections import Counter
 
 import numpy as np
@@ -14,9 +15,22 @@ class Exchange:
         self.emitBestBidAndOffer()
         self.emitLastPrice()
 
-    def sendOrder(self, order):
-        print(f'Recieved order: {order}')
-        self.orderBook.add(order)
+    def run(self, orderQueue):
+        """
+        Main function to run the exchange
+        :param orderQueue: Thread safe queue of orders
+        :return:
+        """
+        while True:
+            try:
+                # Polling for new orders with a timeout
+                order = orderQueue.get(timeout=10)
+                self.orderBook.process(order) # Add the order to the order book
+                orderQueue.task_done()  # Mark the order as processed
+            except queue.Empty:
+                continue
+        print(f'Exiting Exchange Thread...')
+
 
     @emit_every_x_seconds(interval=1)
     def emitBestBidAndOffer(self):
@@ -26,7 +40,6 @@ class Exchange:
     def emitLastPrice(self):
         print(f'Last Price [JPMC] = USD{self.orderBook._lastPrice}')
 
-    @emit_every_x_seconds(interval=5)
     def plotOrderBook(self, bins=20, title='Histogram', xlabel='Value', ylabel='Frequency', color='blue'):
         """
         Plots a histogram of the given data.

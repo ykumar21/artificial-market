@@ -1,5 +1,6 @@
 import configparser
 import random
+import time
 
 from order import OrderTypes, LimitOrder
 from utils import emit_every_x_seconds
@@ -39,12 +40,18 @@ class RandomAgent(Agent):
         self._priceRange = kwargs.get("priceRange", (0,100))
 
 
-    @emit_every_x_seconds(interval=5)
-    def emitOrder(self, orderType=OrderTypes.BUY):
+    def buildOrder(self, orderType=OrderTypes.BUY):
         orderId = random.randint(0, 1000)
         limitPrice = random.randint(*self._priceRange)
         size = 100
-        self.exchangeConn.sendOrder(LimitOrder(id=orderId, limit=limitPrice, size=size, buyOrSell=orderType))
+        return LimitOrder(id=orderId, limit=limitPrice, size=size, buyOrSell=orderType)
+
+    def run(self, orderQueue):
+        while True:
+            order = self.buildOrder()
+            print(f"Sending order: {order}")
+            orderQueue.put(order)  # Send order to the order book
+            time.sleep(random.uniform(0.5, 2.0))  # Random delay between orders
 
 
 class PassiveAgent(Agent):

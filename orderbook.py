@@ -59,7 +59,7 @@ class Book:
             root.rightChild = Book.insertLimitOrder(root.rightChild, order)
         return root
 
-    def add(self, *orders):
+    def process(self, *orders):
         """
         Adds order to the limit order book
         :param order: Order object
