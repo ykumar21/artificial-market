@@ -79,6 +79,16 @@ class Book:
                 else:
                     raise NotImplementedError('Only BUY and SELL are implemented')
 
+    def should_match(self, limitPrice, orderPrice, is_buy):
+        """
+        Compares the current limit order book level and checks if the order is eligible for that level
+        :param orderPrice:
+        :param is_buy:
+        :return:
+        """
+        return (is_buy and limitPrice < orderPrice) or (not is_buy and limitPrice > orderPrice)
+
+
     def matchOffer(self, order):
         """
         Tries to match the buy offer with eligible sell orders. A bid and ask
@@ -109,13 +119,12 @@ class Book:
 
     def getMatchOrderLevel(self, limitOrderTree, order):
         limitLevel = limitOrderTree
-        if order.buyOrSell == OrderTypes.BUY:
-            while limitLevel is not None and (limitLevel.limitPrice >  order.limit):
-                limitLevel = limitLevel.rightChild
-        else:
-            while limitLevel is not None and (limitLevel.limitPrice < order.limit):
-                limitLevel = limitLevel.leftChild
-        return limitLevel
+        is_buy = order.buyOrSell == OrderTypes.BUY
+        while limitLevel is not None:
+            if self.should_match(limitLevel.limitPrice, order.limit, is_buy):
+                return limitLevel  # Found a matching level
+            # Traverse the tree based on order type
+            limitLevel = limitLevel.rightChild if is_buy else limitLevel.leftChild
 
     @property
     def bestBid(self):

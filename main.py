@@ -8,7 +8,6 @@ from order import OrderTypes
 
 def main():
     centralExchange = Exchange()
-
     client = AgentFactory.create_agent('./agents/RandomAgent.ini')
     client.display_config()
     client.connectTo( centralExchange )
@@ -27,10 +26,8 @@ class ThreadManager:
     communication is handled by a thread-safe Queue.
     """
     def __init__(self):
-
         self.exchange = Exchange()
         self.agent = AgentFactory.create_agent('./agents/RandomAgent.ini')
-
         # Queue to manage events between agents and the exchange
         self.event_queue = queue.Queue()
         self.exchange_thread = threading.Thread( target=self.exchange.run, args=(self.event_queue,) )
@@ -38,7 +35,6 @@ class ThreadManager:
     def start(self):
         self.exchange_thread.start()
         self.agent_threads.start()
-
 
 if __name__ == '__main__':
     manager = ThreadManager()
