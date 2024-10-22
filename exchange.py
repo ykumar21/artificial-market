@@ -61,7 +61,7 @@ class Exchange:
 
         # Create a combined list of prices for x-axis
         all_prices = bid_prices + ask_prices
-        all_volumes = bid_volumes + [-v for v in ask_volumes]  # Negative for asks
+        all_volumes = bid_volumes +  ask_volumes  # Negative for asks
 
         # Create indices for the bars
         indices = np.arange(len(all_prices))
@@ -73,7 +73,7 @@ class Exchange:
         plt.bar(indices[:len(bid_prices)], bid_volumes, color='green', label='Bids')
 
         # Plot asks (stacked below zero)
-        plt.bar(indices[len(bid_prices):], [-v for v in ask_volumes], color='red', label='Asks')
+        plt.bar(indices[len(bid_prices):],  ask_volumes, color='red', label='Asks')
 
         # Set x-ticks to price levels
         plt.xticks(indices, all_prices, rotation=45)

@@ -7,11 +7,13 @@ from order import OrderTypes
 
 def main():
     centralExchange = Exchange()
+
     client = RandomAgent(clientId=1, exchange=centralExchange, priceRange=(90,102))
-    client.emitOrder(orderType=OrderTypes.BUY)
     client2 = RandomAgent(clientId=2, exchange=centralExchange, priceRange=(98,110))
+    client.emitOrder(orderType=OrderTypes.BUY)
     client2.emitOrder(orderType=OrderTypes.SELL)
 
+    # This is a slow implementation - use for debug purposes only
     centralExchange.plotOrderBook()
 
     while True:
