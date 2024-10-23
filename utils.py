@@ -2,7 +2,6 @@ import threading
 import time
 
 
-@staticmethod
 def print_bst(node, level=0, prefix="Root: "):
     if node is not None:
         print(" " * (level * 4) + prefix + str(node.limitPrice), end = " [")

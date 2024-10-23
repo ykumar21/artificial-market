@@ -34,7 +34,7 @@ class Exchange:
 
     @emit_every_x_seconds(interval=1)
     def emitBestBidAndOffer(self):
-        print(f'Best BID = {self.orderBook.bestBid} Best ASK = {self.orderBook.bestOffer}')
+        print(f'Best BID = {self.orderBook.bestBid()} Best ASK = {self.orderBook.bestOffer()}')
 
     @emit_every_x_seconds(interval=1)
     def emitLastPrice(self):

@@ -1,6 +1,7 @@
 import threading
 
 from order import OrderTypes
+from utils import print_bst
 
 
 class Limit:
@@ -126,14 +127,13 @@ class Book:
             # Traverse the tree based on order type
             limitLevel = limitLevel.rightChild if is_buy else limitLevel.leftChild
 
-    @property
     def bestBid(self):
         with self.__treeLock:
             curNode = self.buyTree
             while curNode is not None and curNode.rightChild is not None:
                 curNode = curNode.rightChild
         return curNode.limitPrice if curNode is not None else float('-inf')
-    @property
+
     def bestOffer(self):
         with self.__treeLock:
             curNode = self.sellTree
