@@ -27,17 +27,25 @@ class ThreadManager:
     """
     def __init__(self):
         self.exchange = Exchange()
-        self.agent = AgentFactory.create_agent('./agents/RandomAgent.ini')
+        self.agents = []# = AgentFactory.create_agent('./agents/RandomAgent.ini')
         # Queue to manage events between agents and the exchange
         self.event_queue = queue.Queue()
-        self.exchange_thread = threading.Thread( target=self.exchange.run, args=(self.event_queue,) )
-        self.agent_threads = threading.Thread( target=self.agent.run, args=(self.event_queue,) )
+        self.exchange_thread = threading.Thread(target=self.exchange.run, args=(self.event_queue,))
+        self.agent_threads = []
+
     def start(self):
         self.exchange_thread.start()
-        self.agent_threads.start()
+
+    def add_agent(self, agent):
+        self.agents.append(agent)
+        self.agent_threads.append(threading.Thread(target=agent.run, args=(self.event_queue,)))
+        self.agent_threads[-1].start()
+        print(f'Started agent thread for: {agent.name}')
 
 if __name__ == '__main__':
     manager = ThreadManager()
+    manager.add_agent(AgentFactory.create_agent('./agents/MarketMakerRandom.ini'))
+
     manager.start()
     try:
         # Keep the main thread alive

@@ -3,6 +3,7 @@ import random
 import time
 
 from order import OrderTypes, LimitOrder
+from strategies.strategy import StrategyFactory
 from utils import emit_every_x_seconds
 
 class Agent:
@@ -12,16 +13,19 @@ class Agent:
 
         # Load agent configuration
         self.name = self.config['Agent'].get('name', 'DefaultAgent')
-        self.strategy = self.config['Agent'].get('strategy', 'DefaultStrategy')
+        self.strategyName = self.config['Agent'].get('strategy', 'DefaultStrategy')
         self.initial_capital = self.config['Agent'].getfloat('initial_capital', 1000.0)
         self.max_positions = self.config['Agent'].getint('max_positions', 1)
         self.risk_tolerance = self.config['Agent'].getfloat('risk_tolerance', 0.01)
 
         self.exchangeConn = None
 
+        self.strategy = StrategyFactory.getStrategy(self.strategyName)
+        self.strategy.connect(self)
+
     def display_config(self):
         print(f"Agent Name: {self.name}")
-        print(f"Strategy: {self.strategy}")
+        print(f"Strategy: {self.strategyName}")
         print(f"Initial Capital: {self.initial_capital}")
         print(f"Max Positions: {self.max_positions}")
         print(f"Risk Tolerance: {self.risk_tolerance}")
@@ -40,18 +44,14 @@ class RandomAgent(Agent):
         self._priceRange = kwargs.get("priceRange", (0,100))
 
 
-    def buildOrder(self, orderType=OrderTypes.BUY):
-        orderId = random.randint(0, 1000)
-        limitPrice = random.randint(*self._priceRange)
-        size = 100
-        return LimitOrder(id=orderId, limit=limitPrice, size=size, buyOrSell=orderType)
-
     def run(self, orderQueue):
         while True:
-            order = self.buildOrder()
-            print(f"Sending order: {order}")
-            orderQueue.put(order)  # Send order to the order book
-            time.sleep(random.uniform(0.5, 2.0))  # Random delay between orders
+            buyOrders = self.strategy.buy()
+            sellOrders = self.strategy.sell()
+            for order in buyOrders + sellOrders:
+                print(f"Sending order: {order}")
+                orderQueue.put(order)  # Send order to the order book
+            time.sleep(random.uniform(0.5, 50.0))  # Random delay between orders
 
 
 class PassiveAgent(Agent):
