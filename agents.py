@@ -51,7 +51,7 @@ class RandomAgent(Agent):
             for order in buyOrders + sellOrders:
                 print(f"Sending order: {order}")
                 orderQueue.put(order)  # Send order to the order book
-            time.sleep(random.uniform(0.5, 50.0))  # Random delay between orders
+            time.sleep(random.uniform(0.5, 5.0))  # Random delay between orders
 
 
 class PassiveAgent(Agent):

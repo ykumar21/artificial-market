@@ -29,35 +29,91 @@ class Book:
     def __init__(self, **kwargs):
         self.buyTree = None
         self.sellTree = None
-        self._highestBidPrice = float('-inf')
-        self._lowestAskPrice = float('inf')
+        self._highestBid = None
+        self._lowestAsk = None
         self._lastPrice = 0
         self.__treeLock = threading.Lock()
 
         self._orders = {}
 
-    @staticmethod
-    def insertLimitOrder(root, order):
+    def removeOrder(self, order):
+        current = self.headOrder
+        while current is not None and current.id != order.id:
+            current = current.next
+
+        if current is None:
+            raise Exception(f'Order {order} does not exist')
+
+        if current is self.headOrder:
+            self.headOrder = current.nextOrder
+        else:
+            previousOrder = current.prevOrder
+            nextOrder = current.nextOrder
+            previousOrder.nextOrder = nextOrder
+            if nextOrder:
+                nextOrder.prevOrder = previousOrder
+        print(f'Removed order {order}')
+        return True
+
+    def removeLimitOrder(self, root, order):
+        """
+        Removes a limit order from the book.
+        :param root: Node to the binary search tree
+        :param order: Order to be removed
+        :return: True if the order was removed, False otherwise
+        """
+        current = root
+        while current:
+            if current.limitPrice < order.limit:
+                current = current.rightChild
+            elif current.limitPrice > order.limit:
+                current = current.leftChild
+            else:
+                # Remove the node from the current level
+                current.removeOrder(order)
+
+    def insertLimitOrder(self, root, order):
         """
         Adds the order to the root node
         :param root: Root node
         :param order: Order to be added
-        :return:
+        :return: Updated root node with the added order
         """
+        # Create a new level with that limit price
+        limitLevel = Limit(limitPrice=order.limit)
+        limitLevel.insertOrder(order)
+
+        # Update the best bid and offers
+        if order.buyOrSell is OrderTypes.BUY:
+            self._highestBid = limitLevel if self._highestBid is None or order.limit > self._highestBid.limitPrice else self._highestBid
+        if order.buyOrSell is OrderTypes.SELL:
+            self._lowestAsk = limitLevel if self._lowestAsk is None or order.limit < self._lowestAsk.limitPrice else self._lowestAsk
+
         if root is None:
-            # Create a new level with that limit price
-            limitLevel = Limit(limitPrice=order.limit)
-            limitLevel.insertOrder(order)
             return limitLevel
-        if root.limitPrice == order.limit:
-            # Add the order to the current level
-            root.insertOrder(order)
-        elif root.limitPrice < order.limit:
-            # Recur downwards and add to the left side
-            root.leftChild = Book.insertLimitOrder(root.leftChild, order)
+
+        current = root
+        parent = None
+        while current:
+            parent = current
+            if current.limitPrice < order.limit:
+                # Curr level is less than the order so the order
+                # must be inserted in the right subtree
+                current = current.rightChild
+            elif current.limitPrice > order.limit:
+                # Curr level is more than the order so the order
+                # must be inserted in the left subtree
+                current = current.leftChild
+            else:
+                # Add to this level
+                current.insertOrder(order)
+                return root
+
+        if parent.limitPrice < order.limit:
+            parent.rightChild = limitLevel
         else:
-            # Recur downwards to the right and add the order
-            root.rightChild = Book.insertLimitOrder(root.rightChild, order)
+            parent.leftChild = limitLevel
+
         return root
 
     def process(self, *orders):
@@ -73,10 +129,10 @@ class Book:
                     # Try to fulfil the order with the current sell tree. In case
                     # no order is matching, then we add in the tree
                     if not self.matchOffer(order):
-                        self.buyTree = Book.insertLimitOrder(self.buyTree, order)
+                        self.buyTree = self.insertLimitOrder(self.buyTree, order)
                 elif order.buyOrSell == OrderTypes.SELL:
                     if not self.matchOffer(order):
-                        self.sellTree = Book.insertLimitOrder(self.sellTree, order)
+                        self.sellTree = self.insertLimitOrder(self.sellTree, order)
                 else:
                     raise NotImplementedError('Only BUY and SELL are implemented')
 
@@ -98,25 +154,24 @@ class Book:
         :param order: Order
         :return: True if the order is matched else False
         """
-        limitOrderTree = self.sellTree if order.buyOrSell == OrderTypes.BUY else self.buyTree
-        limitLevel = self.getMatchOrderLevel( limitOrderTree, order )
-        # If no level is matched then we reach
-        # the leaf level
-        if limitLevel is None or limitLevel.headOrder is None:
-            print(f'Unable to match order {order} with existing order book.')
+        if self._highestBid is None or self._lowestAsk is None:
+            print(f'Unable to match order {order}')
             return False
-        # The oldest sell order is matched first
-        matchOrder = limitLevel.headOrder
-        print(f'Matching orders: {order} - {matchOrder}')
-        # Remove the orders for the book
-        del self._orders[order.id]
-        del self._orders[matchOrder.id]
-        limitLevel.headOrder = matchOrder.nextOrder
-        # The matched price is always the sell limit price
-        self._lastPrice = matchOrder.limit if matchOrder.buyOrSell is OrderTypes.SELL else order.limit
-        if limitLevel.headOrder is not None:
-            limitLevel.headOrder.prevOrder = None
-        return True
+
+        if order.buyOrSell is OrderTypes.BUY:
+            if order.limit >= self._lowestAsk.limitPrice:
+                print(f'Matching orders: {order} {self._lowestAsk.headOrder}')
+                self._lowestAsk.removeOrder(self._lowestAsk.headOrder)
+                return True
+
+        elif order.buyOrSell is OrderTypes.SELL:
+            if order.limit <= self._highestBid.limitPrice:
+                print(f'Matching orders: {order} {self._highestBid.headOrder}')
+                self._highestBid.removeOrder(self._highestBid.headOrder)
+                return True
+
+        print(f'Unable to match order {order} with existing order book.')
+        return False
 
     def getMatchOrderLevel(self, limitOrderTree, order):
         limitLevel = limitOrderTree
@@ -128,17 +183,8 @@ class Book:
             limitLevel = limitLevel.rightChild if is_buy else limitLevel.leftChild
 
     def bestBid(self):
-        with self.__treeLock:
-            curNode = self.buyTree
-            while curNode is not None and curNode.rightChild is not None:
-                curNode = curNode.rightChild
-        return curNode.limitPrice if curNode is not None else float('-inf')
+        return self._highestBid.headOrder if self._highestBid is not None else -1
 
     def bestOffer(self):
-        with self.__treeLock:
-            curNode = self.sellTree
-            while curNode is not None and curNode.leftChild is not None:
-                curNode = curNode.leftChild
-        return curNode.limitPrice if curNode is not None else float('inf')
-
+        return self._lowestAsk.headOrder if self._lowestAsk is not None else -1
 
