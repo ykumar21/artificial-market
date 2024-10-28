@@ -19,7 +19,7 @@ Welcome to the **Computational Artificial Market (CAM)**, your cutting-edge simu
 ## 🏁 Getting Started
 
 1. **Installation**: Check out the `INSTALL.md` file for step-by-step setup instructions.
-2. **Configuration**: Customize your agents and strategies by referring to the `CONFIG.md` file.
+2. **Configuration**: Customize your agents and strategies by referring to the `agents/` directory.
 3. **Running the Simulation**: Launch your simulations using the scripts found in the `scripts/` directory.
 
 ## 🤝 Contributing
