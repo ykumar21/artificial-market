@@ -45,10 +45,12 @@ class Limit:
         print(f'Removed order {order}')
         return True
 
+    def __repr__(self):
+        return f'Price Level: {self.limitPrice} - {self.headOrder}'
 class Book:
     def __init__(self, **kwargs):
-        self.buyTree = None
-        self.sellTree = None
+        self.buyTree = Limit(limitPrice=float('-inf'), headOrder=None, )
+        self.sellTree = Limit(limitPrice=float('inf'), headOrder=None, )
         self._highestBid = None
         self._lowestAsk = None
         self._lastPrice = 0
@@ -65,6 +67,7 @@ class Book:
         if level is None:
             raise Exception("Level is undefined. Cannot remove")
 
+        # If we are removing the root then move the ptr to the left or right child
         # Case 1 - No children (leaf node)
         if level.rightChild is None and level.leftChild is None:
             if level.parent:
@@ -116,8 +119,11 @@ class Book:
         # Remove the node from the current level
         current.removeOrder(order)
         # Update the BBO
-        self.updateBestBid()
-        self.updateBestOffer()
+        if order.buyOrSell is OrderTypes.BUY:
+            self.updateBestBid()
+        else:
+            self.updateBestOffer()
+
         # If current level has no orders left we remove it from the bst
         if current.headOrder is None:
             # Remove this level from the binary search tree
@@ -181,11 +187,11 @@ class Book:
                 if order.buyOrSell == OrderTypes.BUY:
                     # Try to fulfil the order with the current sell tree. In case
                     # no order is matching, then we add in the tree
-                    if not self.matchOffer(order):
-                        self.buyTree = self.insertLimitOrder(self.buyTree, order)
+                    self.buyTree = self.insertLimitOrder(self.buyTree, order)
+                    self.matchOffer(order)
                 elif order.buyOrSell == OrderTypes.SELL:
-                    if not self.matchOffer(order):
-                        self.sellTree = self.insertLimitOrder(self.sellTree, order)
+                    self.sellTree = self.insertLimitOrder(self.sellTree, order)
+                    self.matchOffer(order)
                 else:
                     raise NotImplementedError('Only BUY and SELL are implemented')
 
@@ -197,22 +203,22 @@ class Book:
         :param order: Order
         :return: True if the order is matched else False
         """
-        if self._highestBid is None or self._lowestAsk is None:
-            print(f'Unable to match order {order}')
-            return False
         if order.buyOrSell is OrderTypes.BUY:
-            if order.limit >= self._lowestAsk.limitPrice:
+            if self._lowestAsk and order.limit >= self._lowestAsk.limitPrice:
                 print(f'Matching orders: {order} {self._lowestAsk.headOrder} @ {self._lowestAsk.limitPrice}' )
                 self._lastPrice = self._lowestAsk.headOrder.limit
                 self.removeLimitOrder(self.sellTree, self._lowestAsk.headOrder)
+                self.removeLimitOrder(self.buyTree, order)
                 return True
+
         elif order.buyOrSell is OrderTypes.SELL:
-            if order.limit <= self._highestBid.limitPrice:
+            if self._highestBid and order.limit <= self._highestBid.limitPrice:
                 print(f'Matching orders: {order} {self._highestBid.headOrder} @ {order.limit}')
                 self._lastPrice = order.limit
                 self.removeLimitOrder(self.buyTree, self._highestBid.headOrder)
+                self.removeLimitOrder(self.sellTree, order)
                 return True
-        print(f'Unable to match order {order} with existing order book.')
+
         return False
 
     def updateBestOffer(self):
@@ -233,7 +239,7 @@ class Book:
         elif rightChildExists:
             current = self._lowestAsk.rightChild
             print(f'New best offer: {current}')
-            self._highestBid = current
+            self._lowestAsk = current
         else:
             # If both left and right child do not exist then the
             # best bid is the parent node

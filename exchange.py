@@ -32,13 +32,13 @@ class Exchange:
         print(f'Exiting Exchange Thread...')
 
 
-    @emit_every_x_seconds(interval=1)
+    @emit_every_x_seconds(interval=5)
     def emitBestBidAndOffer(self):
         print_bst(self.orderBook.buyTree)
         print_bst(self.orderBook.sellTree)
         print(f'Best BID = {self.orderBook.bestBid()} Best ASK = {self.orderBook.bestOffer()}')
 
-    @emit_every_x_seconds(interval=1)
+    @emit_every_x_seconds(interval=5)
     def emitLastPrice(self):
         print(f'Last Price [JPMC] = USD{self.orderBook._lastPrice}')
 
