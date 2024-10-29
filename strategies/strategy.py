@@ -39,7 +39,8 @@ class RandomMarketMaking(Strategy):
             id = random.randint(0, 1000),
             limit = random.randint(*self.agent._priceRange),
             size = 100,
-            buyOrSell=OrderTypes.BUY
+            buyOrSell=OrderTypes.BUY,
+            ticker="AAPL"
         )]
 
 
@@ -52,7 +53,8 @@ class RandomMarketMaking(Strategy):
             id=random.randint(0, 1000),
             limit=random.randint(*self.agent._priceRange),
             size=100,
-            buyOrSell=OrderTypes.SELL
+            buyOrSell=OrderTypes.SELL,
+            ticker="AAPL"
         )]
 
 class StrategyFactory:

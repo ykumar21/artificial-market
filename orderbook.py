@@ -47,6 +47,7 @@ class Limit:
 
     def __repr__(self):
         return f'Price Level: {self.limitPrice} - {self.headOrder}'
+
 class Book:
     def __init__(self, **kwargs):
         self.buyTree = Limit(limitPrice=float('-inf'), headOrder=None, )
@@ -110,6 +111,7 @@ class Book:
         :param order: Order to be removed
         :return: True if the order was removed, False otherwise
         """
+        del self._orders[order.id]
         current = root
         while current and current.limitPrice != order.limit:
             if current.limitPrice < order.limit:
@@ -184,6 +186,7 @@ class Book:
         """
         with self.__treeLock:
             for order in orders:
+                self._orders[order.id] = order
                 if order.buyOrSell == OrderTypes.BUY:
                     # Try to fulfil the order with the current sell tree. In case
                     # no order is matching, then we add in the tree
@@ -210,7 +213,6 @@ class Book:
                 self.removeLimitOrder(self.sellTree, self._lowestAsk.headOrder)
                 self.removeLimitOrder(self.buyTree, order)
                 return True
-
         elif order.buyOrSell is OrderTypes.SELL:
             if self._highestBid and order.limit <= self._highestBid.limitPrice:
                 print(f'Matching orders: {order} {self._highestBid.headOrder} @ {order.limit}')
@@ -218,7 +220,6 @@ class Book:
                 self.removeLimitOrder(self.buyTree, self._highestBid.headOrder)
                 self.removeLimitOrder(self.sellTree, order)
                 return True
-
         return False
 
     def updateBestOffer(self):
@@ -227,6 +228,10 @@ class Book:
         :return: New best offer
         """
         # Check if there are any other orders in the current best bid level
+        if self._lowestAsk.headOrder:
+            print(f'New best offer: {self._lowestAsk.headOrder}')
+            return
+
         leftChildExists = self._lowestAsk.leftChild is not None
         rightChildExists = self._lowestAsk.rightChild is not None
         if leftChildExists:

@@ -29,10 +29,11 @@ class LimitOrder(Order):
         self.limit = kwargs['limit']
         self.size = kwargs['size']
         self.buyOrSell = kwargs['buyOrSell']
+        self.ticker = kwargs['ticker']
         self.eventTime = time.time()
         self.nextOrder = None
         self.prevOrder = None
 
     def __repr__(self):
-        return f'[LimitOrder #{self.id} - { "BUY" if self.buyOrSell == OrderTypes.BUY else "SELL" } {self.size} JPMC @ USD{self.limit}]'
+        return f'[LimitOrder #{self.id} - { "BUY" if self.buyOrSell == OrderTypes.BUY else "SELL" } {self.size} {self.ticker} @ USD{self.limit}]'
 

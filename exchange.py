@@ -1,6 +1,6 @@
 import queue
 from collections import Counter
-
+import json
 import numpy as np
 
 from order import Order, OrderTypes
@@ -10,10 +10,15 @@ from utils import emit_every_x_seconds, print_bst
 import matplotlib.pyplot as plt
 
 class Exchange:
-    def __init__(self):
-        self.orderBook = Book()
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.socket = kwargs.get('socket')
+        # Mapping from ticker -> order book
+        self.orderBook = {}
         self.emitBestBidAndOffer()
         self.emitLastPrice()
+        self.emitOrderBook()
+        self.orderQueue = None
 
     def run(self, orderQueue):
         """
@@ -21,26 +26,50 @@ class Exchange:
         :param orderQueue: Thread safe queue of orders
         :return:
         """
+        self.orderQueue = orderQueue
         while True:
             try:
                 # Polling for new orders with a timeout
-                order = orderQueue.get(timeout=10)
-                self.orderBook.process(order) # Add the order to the order book
+                order = self.orderQueue.get(timeout=10)
+                tickerSymbol = order.ticker
+                if tickerSymbol not in self.orderBook:
+                    self.orderBook[tickerSymbol] = Book()
+                self.orderBook[tickerSymbol].process(order) # Add the order to the order book
                 orderQueue.task_done()  # Mark the order as processed
+
             except queue.Empty:
                 continue
         print(f'Exiting Exchange Thread...')
 
-
-    @emit_every_x_seconds(interval=5)
+    @emit_every_x_seconds(interval=1)
     def emitBestBidAndOffer(self):
-        print_bst(self.orderBook.buyTree)
-        print_bst(self.orderBook.sellTree)
-        print(f'Best BID = {self.orderBook.bestBid()} Best ASK = {self.orderBook.bestOffer()}')
+        for symbol in self.orderBook:
+            best_bid = self.orderBook[symbol].bestBid()
+            best_ask = self.orderBook[symbol].bestOffer()
+            bbo_update = {
+                "best_bid": str(best_bid),
+                "best_ask": str(best_ask),
+            }
+            self.socket.emit('bbo_update', json.dumps(bbo_update))
 
     @emit_every_x_seconds(interval=5)
     def emitLastPrice(self):
-        print(f'Last Price [JPMC] = USD{self.orderBook._lastPrice}')
+        for symbol in self.orderBook:
+            self.socket.emit('last_price', f'{self.orderBook[symbol]._lastPrice}')
+
+    @emit_every_x_seconds(interval=5)
+    def emitOrderBook(self):
+        for symbol in self.orderBook:
+            print_bst(self.orderBook[symbol].buyTree)
+            print_bst(self.orderBook[symbol].sellTree)
+            bidData = [order.limit for orderId, order in self.orderBook[symbol]._orders.items() if
+                       order.buyOrSell is OrderTypes.BUY]
+            askData = [order.limit for orderId, order in self.orderBook[symbol]._orders.items() if
+                       order.buyOrSell is OrderTypes.SELL]
+
+            self.socket.emit('bids', bidData)
+            self.socket.emit('asks', askData)
+
 
     def plotOrderBook(self, bins=20, title='Histogram', xlabel='Value', ylabel='Frequency', color='blue'):
         """

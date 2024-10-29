@@ -2,6 +2,8 @@ import threading
 import time
 import queue
 
+from flask import session
+
 from agents import RandomAgent, AgentFactory
 from exchange import Exchange
 from order import OrderTypes
@@ -25,8 +27,8 @@ class ThreadManager:
     and the agents each run in seperate threads. The agent to exchange
     communication is handled by a thread-safe Queue.
     """
-    def __init__(self):
-        self.exchange = Exchange()
+    def __init__(self, sessionId, socket):
+        self.exchange = Exchange(id=sessionId, socket=socket)
         self.agents = []# = AgentFactory.create_agent('./agents/RandomAgent.ini')
         # Queue to manage events between agents and the exchange
         self.event_queue = queue.Queue()
@@ -42,8 +44,11 @@ class ThreadManager:
         self.agent_threads[-1].start()
         print(f'Started agent thread for: {agent.name}')
 
+    def add_order(self, order):
+        self.event_queue.put(order)
+
 if __name__ == '__main__':
-    manager = ThreadManager()
+    manager = ThreadManager(sessionId=1)
     manager.add_agent(AgentFactory.create_agent('./agents/MarketMakerRandom.ini'))
 
     manager.start()
