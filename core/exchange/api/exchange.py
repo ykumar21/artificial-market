@@ -3,8 +3,8 @@ from collections import Counter
 import json
 import numpy as np
 
-from order import Order, OrderTypes
-from orderbook import Book
+from core.orders.api.types import OrderDirection
+from core.orderbook.api.orderbook import OrderBook
 from utils import emit_every_x_seconds, print_bst
 
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ class Exchange:
                 order = self.orderQueue.get(timeout=10)
                 tickerSymbol = order.ticker
                 if tickerSymbol not in self.orderBook:
-                    self.orderBook[tickerSymbol] = Book()
+                    self.orderBook[tickerSymbol] = OrderBook()
                 self.orderBook[tickerSymbol].process(order) # Add the order to the order book
                 orderQueue.task_done()  # Mark the order as processed
 
@@ -52,20 +52,20 @@ class Exchange:
             }
             self.socket.emit('bbo_update', json.dumps(bbo_update))
 
-    @emit_every_x_seconds(interval=5)
+    @emit_every_x_seconds(interval=1)
     def emitLastPrice(self):
         for symbol in self.orderBook:
             self.socket.emit('last_price', f'{self.orderBook[symbol]._lastPrice}')
 
-    @emit_every_x_seconds(interval=5)
+    @emit_every_x_seconds(interval=1)
     def emitOrderBook(self):
         for symbol in self.orderBook:
             print_bst(self.orderBook[symbol].buyTree)
             print_bst(self.orderBook[symbol].sellTree)
             bidData = [order.limit for orderId, order in self.orderBook[symbol]._orders.items() if
-                       order.buyOrSell is OrderTypes.BUY]
+                       order.buyOrSell is OrderDirection.BUY]
             askData = [order.limit for orderId, order in self.orderBook[symbol]._orders.items() if
-                       order.buyOrSell is OrderTypes.SELL]
+                       order.buyOrSell is OrderDirection.SELL]
 
             self.socket.emit('bids', bidData)
             self.socket.emit('asks', askData)
@@ -85,9 +85,9 @@ class Exchange:
         """
         # Sample data (replace with your actual order book data)
         bidData = [order.limit for orderId, order in self.orderBook._orders.items() if
-                   order.buyOrSell is OrderTypes.BUY]
+                   order.buyOrSell is OrderDirection.BUY]
         askData = [order.limit for orderId, order in self.orderBook._orders.items() if
-                   order.buyOrSell is OrderTypes.SELL]
+                   order.buyOrSell is OrderDirection.SELL]
 
         # Print the data for debugging
         print("Bid Data:", bidData)
@@ -123,7 +123,7 @@ class Exchange:
         plt.xticks(indices, all_prices, rotation=45)
 
         # Add labels and title
-        plt.title('Order Book Depth Chart (Bar Chart)')
+        plt.title('Order OrderBook Depth Chart (Bar Chart)')
         plt.xlabel('Price Level')
         plt.ylabel('Volume')
         plt.axhline(0, color='black', linewidth=0.8)  # Add a line at y=0

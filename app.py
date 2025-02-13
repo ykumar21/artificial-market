@@ -1,16 +1,16 @@
+import os
 import random
-from crypt import methods
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 
-from agents import AgentFactory
+from agents.api import AgentFactory
 from main import ThreadManager
 
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 
-from order import LimitOrder, OrderTypes
+from core.orders.api.types import LimitOrder, OrderDirection
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
@@ -43,6 +43,7 @@ def initialize_exchange():
     sessionManagers[exchange_id] = manager
     sessionManagers[exchange_id].start()
     return jsonify({"message": f'Exchange {exchange_id} started', "exchange_id": exchange_id }), 200
+
 @app.route('/create_limit_order', methods=['POST'])
 def create_limit_order():
     print(sessionManagers)
@@ -56,7 +57,7 @@ def create_limit_order():
     print(data['side'])
     order = LimitOrder(
         id=random.randint(100000, 999999),
-        buyOrSell=OrderTypes.BUY if data['side'] == 'buy' else OrderTypes.SELL,
+        buyOrSell=OrderDirection.BUY if data['side'] == 'buy' else OrderDirection.SELL,
         size=data['size'],
         ticker=data['ticker'],
         limit=data['price']
@@ -64,8 +65,30 @@ def create_limit_order():
     sessionManagers['1'].add_order(order)
     return jsonify({"message": f'Limit order {order.id} created'}), 200
 
+@app.route('/profiles', methods=['GET'])
+def get_agents():
+    agents_folder = 'profiles'  # Ensure this path is correct
+    try:
+        # List all .ini files in the profiles folder
+        agents = [f for f in os.listdir("agents/profiles/") if f.endswith('.ini')]
+        return jsonify(agents), 200  # Return the list of profiles as JSON
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500  # Return an error if something goes wrong
 
+@app.route('/profiles', methods=['POST'])
+def create_agent():
+    agent_name = request.json.get('agent_name')
+    agents_folder = 'profiles'  # Ensure this path is correct
+    config_path = os.path.join(agents_folder, agent_name)
 
+    if not os.path.exists(config_path):
+        return jsonify({'error': 'Agent config not found'}), 404
+
+    # Here you would create your agent from the loaded config
+    agent = AgentFactory.create_agent(config_file=config_path)
+    sessionManagers['1'].add_agent(agent)
+
+    return jsonify({'message': f'Agent {agent} created successfully!'}), 201
 # Run the app
 if __name__ == '__main__':
     socketio.run(app, port=8000, debug=True, allow_unsafe_werkzeug=True)

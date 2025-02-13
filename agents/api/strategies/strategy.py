@@ -1,6 +1,6 @@
 import random
 
-from order import LimitOrder, OrderTypes
+from core.orders.api.types import LimitOrder, OrderDirection
 
 
 class Strategy:
@@ -39,7 +39,7 @@ class RandomMarketMaking(Strategy):
             id = random.randint(0, 1000),
             limit = random.randint(*self.agent._priceRange),
             size = 100,
-            buyOrSell=OrderTypes.BUY,
+            buyOrSell=OrderDirection.BUY,
             ticker="AAPL"
         )]
 
@@ -53,7 +53,7 @@ class RandomMarketMaking(Strategy):
             id=random.randint(0, 1000),
             limit=random.randint(*self.agent._priceRange),
             size=100,
-            buyOrSell=OrderTypes.SELL,
+            buyOrSell=OrderDirection.SELL,
             ticker="AAPL"
         )]
 

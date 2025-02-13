@@ -2,9 +2,8 @@ import configparser
 import random
 import time
 
-from order import OrderTypes, LimitOrder
-from strategies.strategy import StrategyFactory
-from utils import emit_every_x_seconds
+from agents.api.strategies.strategy import StrategyFactory
+
 
 class Agent:
     def __init__(self, config_file):
@@ -59,18 +58,3 @@ class PassiveAgent(Agent):
         super().__init__(config)
         raise NotImplemented("Passive agent has not been implemented")
 
-
-class AgentFactory:
-    @staticmethod
-    def create_agent(config_file):
-        config = configparser.ConfigParser()
-        config.read(config_file)
-
-        agent_type = config.get('Agent', 'type')
-
-        if agent_type == 'RandomAgent':
-            return RandomAgent(config_file)
-        elif agent_type == 'PassiveAgent':
-            return PassiveAgent(config_file)
-        else:
-            raise ValueError(f"Unknown agent type: {agent_type}")

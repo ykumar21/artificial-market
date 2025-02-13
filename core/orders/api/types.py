@@ -1,12 +1,12 @@
 import time
 
-class OrderTypes:
+class OrderDirection:
     BUY = 1
     SELL = 2
 
 class Order:
     def __init__(self, **kwargs):
-        pass
+        raise NotImplementedError("Use the child classes")
 
 class MarketOrder(Order):
     """
@@ -18,6 +18,7 @@ class MarketOrder(Order):
         self.price = kwargs['price']
         self.size = kwargs['size']
         self.buyOrSell = kwargs['buyOrSell']
+
 
 class LimitOrder(Order):
     """
@@ -35,5 +36,5 @@ class LimitOrder(Order):
         self.prevOrder = None
 
     def __repr__(self):
-        return f'[LimitOrder #{self.id} - { "BUY" if self.buyOrSell == OrderTypes.BUY else "SELL" } {self.size} {self.ticker} @ USD{self.limit}]'
+        return f'[LimitOrder #{self.id} - { "BUY" if self.buyOrSell == OrderDirection.BUY else "SELL" } {self.size} {self.ticker} @ USD{self.limit}]'
 

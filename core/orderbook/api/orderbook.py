@@ -1,8 +1,6 @@
 import threading
 
-from order import OrderTypes, Order, LimitOrder
-from utils import print_bst
-
+from core.orders.api.types import OrderDirection
 
 class Limit:
     """
@@ -48,7 +46,7 @@ class Limit:
     def __repr__(self):
         return f'Price Level: {self.limitPrice} - {self.headOrder}'
 
-class Book:
+class OrderBook:
     def __init__(self, **kwargs):
         self.buyTree = Limit(limitPrice=float('-inf'), headOrder=None, )
         self.sellTree = Limit(limitPrice=float('inf'), headOrder=None, )
@@ -121,7 +119,7 @@ class Book:
         # Remove the node from the current level
         current.removeOrder(order)
         # Update the BBO
-        if order.buyOrSell is OrderTypes.BUY:
+        if order.buyOrSell is OrderDirection.BUY:
             self.updateBestBid()
         else:
             self.updateBestOffer()
@@ -129,7 +127,7 @@ class Book:
         # If current level has no orders left we remove it from the bst
         if current.headOrder is None:
             # Remove this level from the binary search tree
-            self.removeBstLevel(self.buyTree if order.buyOrSell is OrderTypes.BUY else OrderTypes.SELL, current)
+            self.removeBstLevel(self.buyTree if order.buyOrSell is OrderDirection.BUY else OrderDirection.SELL, current)
             print(f'Removed Level: {current.limitPrice} as it was empty.')
 
     def insertLimitOrder(self, root, order):
@@ -144,9 +142,9 @@ class Book:
         limitLevel.insertOrder(order)
 
         # Update the best bid and offers
-        if order.buyOrSell is OrderTypes.BUY:
+        if order.buyOrSell is OrderDirection.BUY:
             self._highestBid = limitLevel if self._highestBid is None or order.limit > self._highestBid.limitPrice else self._highestBid
-        if order.buyOrSell is OrderTypes.SELL:
+        if order.buyOrSell is OrderDirection.SELL:
             self._lowestAsk = limitLevel if self._lowestAsk is None or order.limit < self._lowestAsk.limitPrice else self._lowestAsk
 
         if root is None:
@@ -187,12 +185,12 @@ class Book:
         with self.__treeLock:
             for order in orders:
                 self._orders[order.id] = order
-                if order.buyOrSell == OrderTypes.BUY:
+                if order.buyOrSell == OrderDirection.BUY:
                     # Try to fulfil the order with the current sell tree. In case
                     # no order is matching, then we add in the tree
                     self.buyTree = self.insertLimitOrder(self.buyTree, order)
                     self.matchOffer(order)
-                elif order.buyOrSell == OrderTypes.SELL:
+                elif order.buyOrSell == OrderDirection.SELL:
                     self.sellTree = self.insertLimitOrder(self.sellTree, order)
                     self.matchOffer(order)
                 else:
@@ -206,14 +204,14 @@ class Book:
         :param order: Order
         :return: True if the order is matched else False
         """
-        if order.buyOrSell is OrderTypes.BUY:
+        if order.buyOrSell is OrderDirection.BUY:
             if self._lowestAsk and order.limit >= self._lowestAsk.limitPrice:
                 print(f'Matching orders: {order} {self._lowestAsk.headOrder} @ {self._lowestAsk.limitPrice}' )
                 self._lastPrice = self._lowestAsk.headOrder.limit
                 self.removeLimitOrder(self.sellTree, self._lowestAsk.headOrder)
                 self.removeLimitOrder(self.buyTree, order)
                 return True
-        elif order.buyOrSell is OrderTypes.SELL:
+        elif order.buyOrSell is OrderDirection.SELL:
             if self._highestBid and order.limit <= self._highestBid.limitPrice:
                 print(f'Matching orders: {order} {self._highestBid.headOrder} @ {order.limit}')
                 self._lastPrice = order.limit
@@ -259,6 +257,10 @@ class Book:
         :return: New best bid
         """
         # Check if there are any other orders in the current best bid level
+        if self._highestBid.headOrder:
+            print(f'New best offer: {self._lowestAsk.headOrder}')
+            return
+
         leftChildExists = self._highestBid.leftChild is not None
         rightChildExists = self._highestBid.rightChild is not None
         if rightChildExists:
