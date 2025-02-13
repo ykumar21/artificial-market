@@ -1,6 +1,6 @@
 import threading
 
-from core.orders.api.types import OrderDirection
+from core.market.orders.api.types import OrderDirection
 
 class Limit:
     """
@@ -109,7 +109,7 @@ class OrderBook:
         :param order: Order to be removed
         :return: True if the order was removed, False otherwise
         """
-        del self._orders[order.id]
+        del self._orders[ order.id ]
         current = root
         while current and current.limitPrice != order.limit:
             if current.limitPrice < order.limit:

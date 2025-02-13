@@ -1,10 +1,12 @@
+import asyncio
+import logging
 import threading
 import time
 import queue
 
-from agents.api import AgentFactory
-from core.exchange.api.exchange import Exchange
-from core.orders.api.types import OrderDirection
+from core.agents.api import AgentFactory
+from core.market.exchange.api.exchange import Exchange
+from core.market.orders.api.types import OrderDirection
 
 def main():
     centralExchange = Exchange()
@@ -29,7 +31,7 @@ class ThreadManager:
         self.exchange = Exchange(id=sessionId, socket=socket)
         self.agents = []# = AgentFactory.create_agent('./profiles/RandomAgent.ini')
         # Queue to manage events between profiles and the exchange
-        self.event_queue = queue.Queue()
+        self.event_queue = asyncio.Queue()
         self.exchange_thread = threading.Thread(target=self.exchange.run, args=(self.event_queue,))
         self.agent_threads = []
 
@@ -42,8 +44,10 @@ class ThreadManager:
         self.agent_threads[-1].start()
         print(f'Started agent thread for: {agent.name}')
 
-    def add_order(self, order):
-        self.event_queue.put(order)
+    async def add_order(self, order):
+        logging.debug("Adding order %s to the event queue", order)
+        await self.event_queue.put(order)
+        logging.debug("Order Queue = %s", self.event_queue)
 
 if __name__ == '__main__':
     manager = ThreadManager(sessionId=1)

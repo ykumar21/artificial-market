@@ -6,7 +6,7 @@ class OrderDirection:
 
 class Order:
     def __init__(self, **kwargs):
-        raise NotImplementedError("Use the child classes")
+        pass
 
 class MarketOrder(Order):
     """
