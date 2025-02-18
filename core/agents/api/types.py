@@ -2,7 +2,7 @@ import configparser
 import random
 import time
 
-from agents.api.strategies.strategy import StrategyFactory
+from core.agents.api.strategies.strategy import StrategyFactory
 
 
 class Agent:

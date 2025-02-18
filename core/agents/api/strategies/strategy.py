@@ -1,6 +1,6 @@
 import random
 
-from core.orders.api.types import LimitOrder, OrderDirection
+from core.market.orders.api.types import LimitOrder, OrderDirection
 
 
 class Strategy:

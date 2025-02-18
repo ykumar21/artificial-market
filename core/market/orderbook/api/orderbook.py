@@ -1,6 +1,6 @@
 import threading
 
-from core.orders.api.types import OrderDirection
+from core.market.orders.api.types import OrderDirection
 
 class Limit:
     """
@@ -109,7 +109,7 @@ class OrderBook:
         :param order: Order to be removed
         :return: True if the order was removed, False otherwise
         """
-        del self._orders[order.id]
+        del self._orders[ order.id ]
         current = root
         while current and current.limitPrice != order.limit:
             if current.limitPrice < order.limit:
@@ -282,8 +282,8 @@ class OrderBook:
             self._highestBid = current
 
     def bestBid(self):
-        return self._highestBid.headOrder if self._highestBid is not None else -1
+        return self._highestBid.headOrder.limit if self._highestBid and self._highestBid.headOrder else 0.0
 
     def bestOffer(self):
-        return self._lowestAsk.headOrder if self._lowestAsk is not None else -1
+        return self._lowestAsk.headOrder.limit if self._lowestAsk and self._lowestAsk.headOrder else 0.0
 
