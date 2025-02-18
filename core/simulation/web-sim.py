@@ -78,7 +78,7 @@ def get_agents():
     agents_folder = 'profiles'  # Ensure this path is correct
     try:
         # List all .ini files in the profiles folder
-        agents = [f for f in os.listdir("/agents/profiles/") if f.endswith('.ini')]
+        agents = [f for f in os.listdir("agents/profiles/") if f.endswith('.ini')]
         return jsonify(agents), 200  # Return the list of profiles as JSON
     except Exception as e:
         return jsonify({'error': str(e)}), 500  # Return an error if something goes wrong
