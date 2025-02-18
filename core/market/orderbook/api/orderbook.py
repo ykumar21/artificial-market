@@ -1,6 +1,6 @@
 import threading
 
-from core.orders.api.types import OrderDirection
+from core.market.orders.api.types import OrderDirection
 
 class Limit:
     """

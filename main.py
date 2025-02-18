@@ -2,9 +2,9 @@ import threading
 import time
 import queue
 
-from agents.api import AgentFactory
-from core.exchange.api.exchange import Exchange
-from core.orders.api.types import OrderDirection
+from core.agents.api import AgentFactory
+from core.market.exchange.api.exchange import Exchange
+from core.market.orders.api.types import OrderDirection
 
 def main():
     centralExchange = Exchange()

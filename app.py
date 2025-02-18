@@ -4,13 +4,12 @@ import random
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-
-from agents.api import AgentFactory
+from core.agents.api import AgentFactory
 from main import ThreadManager
 
 from flask_socketio import SocketIO
 
-from core.orders.api.types import LimitOrder, OrderDirection
+from core.market.orders.api.types import LimitOrder, OrderDirection
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
@@ -70,7 +69,7 @@ def get_agents():
     agents_folder = 'profiles'  # Ensure this path is correct
     try:
         # List all .ini files in the profiles folder
-        agents = [f for f in os.listdir("agents/profiles/") if f.endswith('.ini')]
+        agents = [f for f in os.listdir("core/agents/profiles/") if f.endswith('.ini')]
         return jsonify(agents), 200  # Return the list of profiles as JSON
     except Exception as e:
         return jsonify({'error': str(e)}), 500  # Return an error if something goes wrong

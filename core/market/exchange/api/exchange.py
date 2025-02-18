@@ -3,8 +3,8 @@ from collections import Counter
 import json
 import numpy as np
 
-from core.orders.api.types import OrderDirection
-from core.orderbook.api.orderbook import OrderBook
+from core.market.orders.api.types import OrderDirection
+from core.market.orderbook.api.orderbook import OrderBook
 from utils import emit_every_x_seconds, print_bst
 
 import matplotlib.pyplot as plt

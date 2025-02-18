@@ -1,6 +1,6 @@
 import configparser
 
-from agents.api.types import RandomAgent, PassiveAgent
+from core.agents.api.types import RandomAgent, PassiveAgent
 
 class AgentFactory:
     @staticmethod
