@@ -124,6 +124,7 @@ class Exchange:
     def plotOrderBook(self, bins=20, title='Histogram', xlabel='Value', ylabel='Frequency', color='blue'):
         """
         Plots a histogram of the given data.
+
         Args:
             data (list or array-like): The input data to plot.
             bins (int): The number of bins for the histogram.
