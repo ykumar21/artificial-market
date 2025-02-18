@@ -5,9 +5,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-from main import ThreadManager
-
 from core.agents.api import AgentFactory
+from core.market.exchange.ExchangeManager import ExchangeManager
 from core.market.orders.api.types import LimitOrder, OrderDirection
 
 app = Flask(__name__)
@@ -21,7 +20,7 @@ sessionManagers = { }
 import logging
 
 # Define a custom log format
-log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+log_format = "%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s] - %(message)s"
 
 # Configure logging
 logging.basicConfig(
@@ -29,8 +28,6 @@ logging.basicConfig(
     format=log_format,    # Set the log format
     datefmt="%Y-%m-%d %H:%M:%S"  # Date format
 )
-
-
 
 @app.route("/subscribe", methods=['POST'])
 def subscribe():
@@ -52,12 +49,12 @@ def initialize_exchange():
     if exchange_id in sessionManagers:
         return jsonify({"error": "Exchange ID already exists."}), 400
     # Create a new session manage with an empty order book
-    manager = ThreadManager(sessionId=exchange_id, socket=socketio)
+    manager = ExchangeManager(sessionId=exchange_id, socket=socketio)
     sessionManagers[exchange_id] = manager
     sessionManagers[exchange_id].start()
     return jsonify({"message": f'Exchange {exchange_id} started', "exchange_id": exchange_id }), 200
 
-@app.route('/create_limit_order', methods=['POST'])
+@app.route('/orders', methods=['POST'])
 async def create_limit_order():
     data = request.json  # Get JSON data from the request
     # Validate the input data
@@ -68,12 +65,12 @@ async def create_limit_order():
     order = LimitOrder(
         id=random.randint(100000, 999999),
         buyOrSell=OrderDirection.BUY if data['side'] == 'buy' else OrderDirection.SELL,
-        size=data['size'],
+        size=int(data['size']),
         ticker=data['ticker'],
-        limit=data['price']
+        limit=float(data['price'])
     )
 
-    await sessionManagers['1'].add_order(order)
+    sessionManagers['1'].add_order(order)
     return jsonify({"message": f'Limit order {order.id} created'}), 200
 
 @app.route('/profiles', methods=['GET'])
